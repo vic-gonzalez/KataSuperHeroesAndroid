@@ -37,18 +37,22 @@ import org.mockito.Mock;
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
+import static com.karumi.katasuperheroes.matchers.RecyclerViewItemsCountMatcher.recyclerViewHasItemCount;
 import static org.hamcrest.CoreMatchers.not;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class) @LargeTest public class MainActivityTest {
 
   private static final String EMPTY_CASE_MESSAGE = "¯\\_(ツ)_/¯";
+  private static final int HEROES_MAX_MOCKED_COUNT = 12;
 
   @Rule public DaggerMockRule<MainComponent> daggerRule =
       new DaggerMockRule<>(MainComponent.class, new MainModule()).set(
           new DaggerMockRule.ComponentSetter<MainComponent>() {
-            @Override public void setComponent(MainComponent component) {
+            @Override
+            public void setComponent(MainComponent component) {
               SuperHeroesApplication app =
                   (SuperHeroesApplication) InstrumentationRegistry.getInstrumentation()
                       .getTargetContext()
@@ -62,7 +66,8 @@ import static org.mockito.Mockito.when;
 
   @Mock SuperHeroesRepository repository;
 
-  @Test public void showsEmptyCaseIfThereAreNoSuperHeroes() {
+  @Test
+  public void showsEmptyCaseIfThereAreNoSuperHeroes() {
     givenThereAreNoSuperHeroes();
 
     startActivity();
@@ -70,7 +75,8 @@ import static org.mockito.Mockito.when;
     onView(withText(EMPTY_CASE_MESSAGE)).check(matches(isDisplayed()));
   }
 
-  @Test public void hideEmptyCaseMessageIfThereAreSuperHeroes() {
+  @Test
+  public void hideEmptyCaseMessageIfThereAreSuperHeroes() {
     givenThereAreSuperHeroes();
 
     startActivity();
@@ -78,12 +84,38 @@ import static org.mockito.Mockito.when;
     onView(withText(EMPTY_CASE_MESSAGE)).check(matches(not(isDisplayed())));
   }
 
+  @Test
+  public void shouldSeeOneHeroeWhenIHaveOneHeroe() {
+    givenThereAreSuperHeroes(1);
+
+    startActivity();
+
+    onView(withId(R.id.recycler_view)).check(matches(recyclerViewHasItemCount(1)));
+  }
+
+  @Test
+  public void shouldSeeMaxHeroesCountWhenIHaveThem() {
+    givenThereAreSuperHeroes();
+
+    startActivity();
+
+    onView(withId(R.id.recycler_view)).check(
+        matches(recyclerViewHasItemCount(HEROES_MAX_MOCKED_COUNT)));
+  }
+
   private void givenThereAreNoSuperHeroes() {
     when(repository.getAll()).thenReturn(Collections.<SuperHero>emptyList());
   }
 
   private void givenThereAreSuperHeroes() {
-    when(repository.getAll()).thenReturn(getMockedHeroesList());
+    givenThereAreSuperHeroes(HEROES_MAX_MOCKED_COUNT);
+  }
+
+  private void givenThereAreSuperHeroes(int count) {
+    if (count < 1 || count > 12) {
+      throw new IllegalArgumentException("Superherores count must be between 1 and 12");
+    }
+    when(repository.getAll()).thenReturn(getMockedHeroesList().subList(0, count));
   }
 
   private List<SuperHero> getMockedHeroesList() {
