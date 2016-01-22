@@ -17,6 +17,7 @@
 package com.karumi.katasuperheroes;
 
 import android.support.test.InstrumentationRegistry;
+import android.support.test.espresso.contrib.RecyclerViewActions;
 import android.support.test.espresso.intent.rule.IntentsTestRule;
 import android.support.test.runner.AndroidJUnit4;
 import android.test.suitebuilder.annotation.LargeTest;
@@ -35,7 +36,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
 import static android.support.test.espresso.Espresso.onView;
+import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.assertion.ViewAssertions.matches;
+import static android.support.test.espresso.matcher.ViewMatchers.hasDescendant;
 import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static android.support.test.espresso.matcher.ViewMatchers.withId;
 import static android.support.test.espresso.matcher.ViewMatchers.withText;
@@ -47,6 +50,7 @@ import static org.mockito.Mockito.when;
 
   private static final String EMPTY_CASE_MESSAGE = "¯\\_(ツ)_/¯";
   private static final int HEROES_MAX_MOCKED_COUNT = 12;
+  private static final int FIRST_POSITION = 0;
 
   @Rule public DaggerMockRule<MainComponent> daggerRule =
       new DaggerMockRule<>(MainComponent.class, new MainModule()).set(
@@ -101,6 +105,20 @@ import static org.mockito.Mockito.when;
 
     onView(withId(R.id.recycler_view)).check(
         matches(recyclerViewHasItemCount(HEROES_MAX_MOCKED_COUNT)));
+  }
+
+  @Test
+  public void shouldSeeAllSuperheroesNamesOnMyList() {
+    givenThereAreSuperHeroes();
+
+    startActivity();
+
+    List<SuperHero> fullHeroesList = getMockedHeroesList();
+    for (SuperHero superHero : fullHeroesList) {
+      onView(withId(R.id.recycler_view)).perform(
+          RecyclerViewActions.scrollTo(hasDescendant(withText(superHero.getName()))))
+          .check(matches(hasDescendant(withText(superHero.getName()))));
+    }
   }
 
   private void givenThereAreNoSuperHeroes() {
